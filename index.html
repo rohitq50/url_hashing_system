@@ -9,19 +9,23 @@
 	<body>
 		<div id="app">
 			<div class="m-5 mt-5">
-				<div class="d-flex height-center">
-					<div class="border rounded w-50 my-auto mx-5">
+				<div class="row margin-center">
+					<div class="col border rounded m-3">
+						<div v-if="showError !== ''" class="alert alert-danger text-wrap" role="alert">
+							<h3>{{showError}}</hh3>
+						</div>
 						<h3 class="m-3 text-center">Create tiny url</h3>
 						<form class="m-4 needs-validation">
 							<div class="form-group mb-3">
 							  <label for="log-url">Enter a long URL to make a TinyURLs</label>
-							  <textarea type="text" class="form-control" id=log-url" aria-describedby="url" placeholder="Enter long url" v-model="longUrl" required></textarea>
+							  <textarea type="url" class="form-control" id=log-url" aria-describedby="url" placeholder="Enter long url" v-model="longUrl" required></textarea>
 							  <div class="invalid-feedback">Please enter the long url here.</div>
 							</div>
 							<div class="mb-3">
-								<select v-model="selectedBaseUrls" class="form-select" aria-label="base url select" required>
-									<option  value="" selected disabled>Select date</option>
-									<option value="1">newsbytes.com</option>
+								<select v-model="baseUrl" class="form-select" aria-label="base url select" required>
+									<option  value="0" selected disabled>Select date</option>
+									<!-- TODO change it to any live url -->
+									<option value="1">localhost</option>
 								</select>
 							</div>
 							<div class="mb-2">
@@ -29,11 +33,11 @@
 							</div>
 						</form>
 					</div>
-					<div class="my-auto ms-5">
+					<div class="col my-auto m-3">
 						<div v-if="showGreeting !== ''">
-							<h3>Your Tiny URL is here: </h3>
-							<div class="alert alert-success" role="alert">
-								<h1>{{showGreeting}}</h1>
+							<h4>Your Tiny URL is here: </h4>
+							<div class="alert alert-success text-wrap" role="alert">
+								<h3>{{showGreeting}}</hh3>
 							</div>
 						</div>
 					</div>
@@ -49,7 +53,9 @@
 				data: {
 					showGreeting: '',
 					longUrl: '',
-					selectedBaseUrls: '',
+					baseUrl: '',
+					showError: '',
+					baseUrls: ["", "http://localhost:3000"] // TODO base url change and it should take from the config file
 				},
 				methods: {
 					submit(event) {
@@ -58,17 +64,20 @@
 						}
 						let formData = {
 							longUrl: this.longUrl,
-							selectedBaseUrls: this.selectedBaseUrls
+							baseUrl: this.baseUrls[this.baseUrl]
 						}
 						this.createTinyUrl(formData)
 					},
 					checkLongUrl() {
+						// TODO validate the url
 						if(this.longUrl > 500 || this.password < 4) {
 							return false;
 						}
 						return true;
 					},
 					async postData(url = '', method = 'POST', data = {}) {
+						this.showError = "";
+						// TODO make a separate file to handle all type of requests
 						let res = null;
 						await fetch(url, {
 							method: method,
@@ -81,10 +90,12 @@
 							if(response.status == 200) {
 								return response.json()
 							}
+							this.showError = "Something went wrong"
 							return false
 						})
 						.then(data => res = data)
 						.catch((error) => {
+							this.showError = "Something went wrong"
 							console.error('Error:', error);
 						});
 						return res;
@@ -92,9 +103,10 @@
 					async createTinyUrl(data) {
 						let res = await this.postData(endPoint + "/createTinyUrl", "POST", data)
 						if(res) {
-							this.showGreeting = `Tiny URL:  ${res.payload.tinyUrl}!`
+							this.showGreeting = res.payload.tinyUrl
 						}
 					},
+					//TODO  Move it in common file
 					validateFormDate (event) {
 						let isSuccess = true;
 						'use strict'
@@ -115,8 +127,8 @@
 			})
 		</script>
 		<style>
-			.height-center {
-				margin: 18% 4%;
+			.margin-center {
+				margin: 18% 0%;
 			}
 		</style>
 	</body>

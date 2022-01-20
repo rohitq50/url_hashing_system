@@ -1,16 +1,18 @@
 import express from 'express';
-import userAccount from "../../services/userAccount.js";
+import tinyUrl from "../../services/tinyUrl.js";
 const router = express.Router();
 
-router.post('/createUser', async function(req, res, next) {
-	let userData = req.body
-	if(userData.email == "" || userData.password == "" || userData.first_name == "" || userData.last_name == "" || userData.gender == "" || userData.dob == "") {
+router.post('/api/v1/createTinyUrl', async function(req, res, next) {
+	let obj = req.body
+	// TODO handle the query params
+	if(obj.longUrl == "" || obj.baseUrl == "") {
 		return res.status(400).send({msg: 'Invalid input(s)!'})
 	}
 	try {
-		let success = await userAccount.createUser(userData);
-		if(success) {
-			return res.status(200).json({code: 200, msg: 'Account created!', payload: userData})
+		let resoonse = await tinyUrl.createTinyUrl(obj);
+		if(resoonse) {
+			obj.tinyUrl = resoonse.tinyUrl
+			return res.status(200).json({code: 200, msg: 'Tiny Url created!', payload: obj})
 		}
 		res.status(400).send({msg: 'Failed to create!'})
 	} catch (err) {
@@ -19,18 +21,23 @@ router.post('/createUser', async function(req, res, next) {
 	}
 });
 
-router.get('/login', async function(req, res, next) {
-	let userData = req.body
-	if(userData.email == "" || userData.password == "") {
-		res.status(400).send({msg: 'Invalid input(s)!'})
+router.get('/*', async function(req, res, next) {
+	let tinyUrlStr = req.url
+	if( ! tinyUrlStr) {  // TODO add some more validation to validate URL's
+		res.status(400).send({msg: 'Invalid url!'})
+	}
+	if(tinyUrlStr == "/favicon.ico") { // handle favicon issue
+		return res.status(200);
 	}
 	try {
-		let result = await userAccount.login(userData);
+		// TODO handle the query params
+		const uniqueCode = tinyUrlStr.substring(1)
+		let result = await tinyUrl.getTinyUrl(uniqueCode);
 		if(result) {
-			res.status(200).json(result)
-			return;
+			// redirecting...
+			return res.writeHead(301, {Location: result.long_url}).end();
 		}
-		res.status(400).send({msg: 'Failed to create!'})
+		return res.status(400).send({msg: 'Failed to get!'})
 	} catch (err) {
 		console.error(`Something went wrong! `, err.message);
 		next(err);

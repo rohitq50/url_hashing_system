@@ -13,4 +13,4 @@ async function startServer() {
 	);
 }
 startServer();
-app.use('/api/v1', routesV1);
+app.use('/', routesV1);
